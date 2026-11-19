@@ -1,0 +1,9 @@
+{
+  "runtimeOptions": {
+    "additionalProbingPaths": [
+      "C:\\Users\\jason\\.dotnet\\store\\|arch|\\|tfm|",
+      "C:\\Users\\jason\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e11c3c6b66a8220f3f872a6a3124615\\nuget",
+      "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+    ]
+  }
+}
