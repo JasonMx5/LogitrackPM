@@ -1,0 +1,100 @@
+@baseUrl = http://localhost:5000
+@testEmail = test.user@example.com
+@testPassword = GoodPass123!
+@inventoryItemId = 1
+@orderId = 1
+
+### 1. Register a new user
+# @name register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+}
+
+### 2. Login and retrieve a JWT
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+}
+
+@accessToken = {{login.response.body.accessToken}}
+
+### 3. Anonymous inventory request - expected 401
+GET {{baseUrl}}/api/inventory
+Accept: application/json
+
+### 4. Anonymous order request - expected 401
+GET {{baseUrl}}/api/orders
+Accept: application/json
+
+### 5. Authenticated inventory request - expected 200
+GET {{baseUrl}}/api/inventory
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### 6. Authenticated order request - expected 200
+GET {{baseUrl}}/api/orders
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### 7. Authenticated non-Manager inventory POST - expected 403
+POST {{baseUrl}}/api/inventory
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Test Pallet",
+  "quantity": 8,
+  "location": "Warehouse A"
+}
+
+### 8. Authenticated non-Manager order POST - expected 403
+POST {{baseUrl}}/api/orders
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "customerName": "Test Customer",
+  "datePlaced": "2026-11-20T00:00:00",
+  "items": [
+    {
+      "name": "Test Pallet",
+      "quantity": 2,
+      "location": "Warehouse A"
+    },
+    {
+      "name": "Test Wrap",
+      "quantity": 5,
+      "location": "Warehouse B"
+    }
+  ]
+}
+
+### 9. Authenticated get order by ID - expected 200 or 404
+GET {{baseUrl}}/api/orders/{{orderId}}
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### 10. Invalid login - expected 401
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "WrongPassword123!"
+}
+
+### 11. Authenticated Manager-only inventory DELETE - expected 403 unless Manager
+DELETE {{baseUrl}}/api/inventory/{{inventoryItemId}}
+Authorization: Bearer {{accessToken}}
+
+### 12. Authenticated Manager-only order DELETE - expected 403 unless Manager
+DELETE {{baseUrl}}/api/orders/{{orderId}}
+Authorization: Bearer {{accessToken}}

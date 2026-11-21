@@ -10,7 +10,7 @@
         "projectUniqueName": "C:\\Users\\jason\\Documents\\GitHub\\LogitrackPM\\LogiTrack\\LogiTrack.csproj",
         "projectName": "LogiTrack",
         "projectPath": "C:\\Users\\jason\\Documents\\GitHub\\LogitrackPM\\LogiTrack\\LogiTrack.csproj",
-        "packagesPath": "C:\\Users\\jason\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e11c3c6b66a8220f3f872a6a3124615\\nuget",
+        "packagesPath": "C:\\Users\\jason\\.nuget\\packages\\",
         "outputPath": "C:\\Users\\jason\\Documents\\GitHub\\LogitrackPM\\LogiTrack\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -44,6 +44,10 @@
               "target": "Package",
               "version": "[2.1.1, )",
               "autoReferenced": true
+            },
+            "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[2.1.6, )"
             },
             "Microsoft.AspNetCore.Razor.Design": {
               "suppressParent": "All",
