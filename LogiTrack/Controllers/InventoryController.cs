@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using LogiTrack.Caching;
 using LogiTrack.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace LogiTrack.Controllers
 {
@@ -13,16 +16,29 @@ namespace LogiTrack.Controllers
     public class InventoryController : ControllerBase
     {
         private readonly LogiTrackContext _context;
+        private readonly IMemoryCache _cache;
 
-        public InventoryController(LogiTrackContext context)
+        public InventoryController(LogiTrackContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<InventoryItem>>> Get()
         {
-            return await _context.InventoryItems.ToListAsync();
+            if (!_cache.TryGetValue(CacheKeys.InventoryItems, out List<InventoryItem> items))
+            {
+                items = await _context.InventoryItems
+                    .AsNoTracking()
+                    .ToListAsync();
+                _cache.Set(
+                    CacheKeys.InventoryItems,
+                    items,
+                    TimeSpan.FromSeconds(30));
+            }
+
+            return items;
         }
 
         [HttpPost]
@@ -31,6 +47,7 @@ namespace LogiTrack.Controllers
         {
             _context.InventoryItems.Add(item);
             await _context.SaveChangesAsync();
+            _cache.Remove(CacheKeys.InventoryItems);
 
             return Ok(item);
         }
@@ -47,6 +64,7 @@ namespace LogiTrack.Controllers
 
             _context.InventoryItems.Remove(item);
             await _context.SaveChangesAsync();
+            _cache.Remove(CacheKeys.InventoryItems);
 
             return NoContent();
         }

@@ -13,7 +13,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using LogiTrack.Email;
+using LogiTrack.Security;
 using LogiTrack.Models;
 
 namespace LogiTrack
@@ -34,7 +35,7 @@ namespace LogiTrack
             if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
             {
                 throw new InvalidOperationException(
-                    "Configure Jwt:Key with a signing key of at least 32 bytes.");
+                    "Set Jwt:Key through a secret provider with a signing key of at least 32 bytes.");
             }
 
             var issuer = Configuration["Jwt:Issuer"];
@@ -46,10 +47,24 @@ namespace LogiTrack
 
             var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
+            services.AddMemoryCache();
             services.AddScoped<LogiTrackContext>();
-            services.AddIdentity<ApplicationUser, IdentityRole>()
+            services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+                {
+                    options.Password.RequiredLength = 12;
+                    options.User.RequireUniqueEmail = true;
+                    options.SignIn.RequireConfirmedEmail = true;
+                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                    options.Lockout.MaxFailedAccessAttempts = 5;
+                    options.Lockout.AllowedForNewUsers = true;
+                })
                 .AddEntityFrameworkStores<LogiTrackContext>()
                 .AddDefaultTokenProviders();
+            services.Configure<DataProtectionTokenProviderOptions>(options =>
+                options.TokenLifespan = TimeSpan.FromHours(1));
+            services.Configure<SmtpOptions>(Configuration.GetSection("Smtp"));
+            services.AddTransient<IEmailSender, SmtpEmailSender>();
+            services.AddScoped<AuthRateLimitFilter>();
             services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -75,6 +90,11 @@ namespace LogiTrack
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILogger<Startup> logger)
         {
+            if (env.IsProduction())
+            {
+                ValidateProductionConfiguration();
+            }
+
             SeedManagerRoleAsync(app.ApplicationServices, logger).GetAwaiter().GetResult();
 
             if (env.IsDevelopment())
@@ -89,6 +109,46 @@ namespace LogiTrack
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseMvc();
+        }
+
+        private void ValidateProductionConfiguration()
+        {
+            var smtpHost = Configuration["Smtp:Host"];
+            var fromEmail = Configuration["Smtp:FromEmail"];
+            var smtpUserName = Configuration["Smtp:UserName"];
+            var smtpPassword = Configuration["Smtp:Password"];
+            var apiBaseUrl = Configuration["Auth:PublicApiBaseUrl"];
+
+            if (string.IsNullOrWhiteSpace(smtpHost) || string.IsNullOrWhiteSpace(fromEmail))
+            {
+                throw new InvalidOperationException(
+                    "Configure Smtp:Host and Smtp:FromEmail for production email delivery.");
+            }
+
+            if (string.IsNullOrWhiteSpace(smtpUserName) != string.IsNullOrWhiteSpace(smtpPassword))
+            {
+                throw new InvalidOperationException(
+                    "Configure both Smtp:UserName and Smtp:Password, or neither.");
+            }
+
+            int smtpPort;
+            if (!int.TryParse(Configuration["Smtp:Port"], out smtpPort) ||
+                smtpPort < 1 ||
+                smtpPort > 65535 ||
+                smtpPort == 465)
+            {
+                throw new InvalidOperationException(
+                    "Configure an SMTP STARTTLS port (typically 587); implicit TLS port 465 is not supported.");
+            }
+
+            Uri apiUri;
+            if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out apiUri) ||
+                apiUri.Scheme != Uri.UriSchemeHttps ||
+                apiUri.IsLoopback)
+            {
+                throw new InvalidOperationException(
+                    "Configure Auth:PublicApiBaseUrl with the public HTTPS API URL.");
+            }
         }
 
         private async Task SeedManagerRoleAsync(IServiceProvider services, ILogger<Startup> logger)

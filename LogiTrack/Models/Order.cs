@@ -14,38 +14,13 @@ namespace LogiTrack.Models
 
         public DateTime DatePlaced { get; set; }
 
-        public List<InventoryItem> Items { get; set; }
+        public string UserId { get; set; }
+
+        public List<OrderItem> Items { get; set; }
 
         public Order()
         {
-            Items = new List<InventoryItem>();
-        }
-
-        public void AddItem(InventoryItem item)
-        {
-            if (item == null)
-            {
-                return;
-            }
-
-            Items.Add(item);
-        }
-
-        public void RemoveItem(int itemId)
-        {
-            for (int i = 0; i < Items.Count; i++)
-            {
-                if (Items[i].ItemId == itemId)
-                {
-                    Items.RemoveAt(i);
-                    return;
-                }
-            }
-        }
-
-        public string GetOrderSummary()
-        {
-            return $"Order #{OrderId} for {CustomerName} | Items: {Items.Count} | Placed: {DatePlaced.ToString("M/d/yyyy")}";
+            Items = new List<OrderItem>();
         }
     }
 }

@@ -77,13 +77,9 @@ namespace LogiTrack.Migrations
                     b.Property<string>("Name")
                         .IsRequired();
 
-                    b.Property<int?>("OrderId");
-
                     b.Property<int>("Quantity");
 
                     b.HasKey("ItemId");
-
-                    b.HasIndex("OrderId");
 
                     b.ToTable("InventoryItems");
                 });
@@ -98,9 +94,76 @@ namespace LogiTrack.Migrations
 
                     b.Property<DateTime>("DatePlaced");
 
+                    b.Property<string>("UserId");
+
                     b.HasKey("OrderId");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("LogiTrack.Models.OrderItem", b =>
+                {
+                    b.Property<int>("OrderItemId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("InventoryItemId");
+
+                    b.Property<string>("Location")
+                        .IsRequired();
+
+                    b.Property<string>("Name")
+                        .IsRequired();
+
+                    b.Property<int>("OrderId");
+
+                    b.Property<int>("Quantity");
+
+                    b.HasKey("OrderItemId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("LogiTrack.Models.ShoppingCart", b =>
+                {
+                    b.Property<int>("CartId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("ExpiresAt");
+
+                    b.Property<string>("UserId")
+                        .IsRequired();
+
+                    b.HasKey("CartId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("ShoppingCarts");
+                });
+
+            modelBuilder.Entity("LogiTrack.Models.ShoppingCartItem", b =>
+                {
+                    b.Property<int>("CartItemId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("CartId");
+
+                    b.Property<int>("InventoryItemId");
+
+                    b.Property<int>("Quantity");
+
+                    b.HasKey("CartItemId");
+
+                    b.HasIndex("InventoryItemId");
+
+                    b.HasIndex("CartId", "InventoryItemId")
+                        .IsUnique();
+
+                    b.ToTable("ShoppingCartItems");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -210,11 +273,33 @@ namespace LogiTrack.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
-            modelBuilder.Entity("LogiTrack.Models.InventoryItem", b =>
+            modelBuilder.Entity("LogiTrack.Models.OrderItem", b =>
                 {
                     b.HasOne("LogiTrack.Models.Order", "Order")
                         .WithMany("Items")
-                        .HasForeignKey("OrderId");
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("LogiTrack.Models.ShoppingCart", b =>
+                {
+                    b.HasOne("LogiTrack.Models.ApplicationUser")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("LogiTrack.Models.ShoppingCartItem", b =>
+                {
+                    b.HasOne("LogiTrack.Models.ShoppingCart", "Cart")
+                        .WithMany("Items")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LogiTrack.Models.InventoryItem", "InventoryItem")
+                        .WithMany()
+                        .HasForeignKey("InventoryItemId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

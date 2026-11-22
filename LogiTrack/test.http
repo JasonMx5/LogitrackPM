@@ -1,10 +1,16 @@
+# Set Jwt__Key and SMTP settings through environment variables or a secret provider.
 @baseUrl = http://localhost:5000
 @testEmail = test.user@example.com
 @testPassword = GoodPass123!
+@confirmationUserId = paste-user-id-from-confirmation-email
+@confirmationToken = paste-url-decoded-token-from-confirmation-email
+@resetUserId = paste-user-id-from-reset-email
+@resetToken = paste-token-from-reset-email
 @inventoryItemId = 1
-@orderId = 1
+@secondInventoryItemId = 2
+@cartQuantity = 1
 
-### 1. Register a new user
+### Register a user
 # @name register
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
@@ -14,7 +20,19 @@ Content-Type: application/json
   "password": "{{testPassword}}"
 }
 
-### 2. Login and retrieve a JWT
+### If registration mail is unavailable, resend after SMTP is configured
+POST {{baseUrl}}/api/auth/resend-confirmation
+Content-Type: application/json
+
+{
+  "email": "{{testEmail}}"
+}
+
+### Confirm email using values from the confirmation email
+GET {{baseUrl}}/api/auth/confirm-email?userId={{confirmationUserId}}&token={{confirmationToken}}
+Accept: application/json
+
+### Login and retrieve a JWT after confirming the email
 # @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
@@ -26,25 +44,83 @@ Content-Type: application/json
 
 @accessToken = {{login.response.body.accessToken}}
 
-### 3. Anonymous inventory request - expected 401
-GET {{baseUrl}}/api/inventory
+### Request password-reset instructions
+POST {{baseUrl}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "{{testEmail}}"
+}
+
+### Reset password using values from the reset email
+POST {{baseUrl}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "userId": "{{resetUserId}}",
+  "token": "{{resetToken}}",
+  "newPassword": "NewStrongPass123!"
+}
+
+### Anonymous request is rejected (expected 401)
+GET {{baseUrl}}/api/cart
 Accept: application/json
 
-### 4. Anonymous order request - expected 401
-GET {{baseUrl}}/api/orders
-Accept: application/json
-
-### 5. Authenticated inventory request - expected 200
+### List inventory
 GET {{baseUrl}}/api/inventory
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
-### 6. Authenticated order request - expected 200
-GET {{baseUrl}}/api/orders
+### Get or create this user's persisted cart
+GET {{baseUrl}}/api/cart
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
-### 7. Authenticated non-Manager inventory POST - expected 403
+### Add inventory item to cart
+POST {{baseUrl}}/api/cart/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "inventoryItemId": {{inventoryItemId}},
+  "quantity": {{cartQuantity}}
+}
+
+### Add another item to cart (optional)
+POST {{baseUrl}}/api/cart/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "inventoryItemId": {{secondInventoryItemId}},
+  "quantity": 1
+}
+
+### Review the persisted cart
+GET {{baseUrl}}/api/cart
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Checkout: validates and decrements stock transactionally, creates an order
+# @name checkout
+POST {{baseUrl}}/api/orders
+Authorization: Bearer {{accessToken}}
+
+### Fetch the order created by checkout
+GET {{checkout.response.headers.Location}}
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### List this user's orders (paginated)
+GET {{baseUrl}}/api/orders?page=1&pageSize=20
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Remove an item from the cart
+DELETE {{baseUrl}}/api/cart/items/{{inventoryItemId}}
+Authorization: Bearer {{accessToken}}
+
+### Manager-only inventory write (expected 403 for regular users)
 POST {{baseUrl}}/api/inventory
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -54,47 +130,3 @@ Authorization: Bearer {{accessToken}}
   "quantity": 8,
   "location": "Warehouse A"
 }
-
-### 8. Authenticated non-Manager order POST - expected 403
-POST {{baseUrl}}/api/orders
-Content-Type: application/json
-Authorization: Bearer {{accessToken}}
-
-{
-  "customerName": "Test Customer",
-  "datePlaced": "2026-11-20T00:00:00",
-  "items": [
-    {
-      "name": "Test Pallet",
-      "quantity": 2,
-      "location": "Warehouse A"
-    },
-    {
-      "name": "Test Wrap",
-      "quantity": 5,
-      "location": "Warehouse B"
-    }
-  ]
-}
-
-### 9. Authenticated get order by ID - expected 200 or 404
-GET {{baseUrl}}/api/orders/{{orderId}}
-Accept: application/json
-Authorization: Bearer {{accessToken}}
-
-### 10. Invalid login - expected 401
-POST {{baseUrl}}/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "{{testEmail}}",
-  "password": "WrongPassword123!"
-}
-
-### 11. Authenticated Manager-only inventory DELETE - expected 403 unless Manager
-DELETE {{baseUrl}}/api/inventory/{{inventoryItemId}}
-Authorization: Bearer {{accessToken}}
-
-### 12. Authenticated Manager-only order DELETE - expected 403 unless Manager
-DELETE {{baseUrl}}/api/orders/{{orderId}}
-Authorization: Bearer {{accessToken}}

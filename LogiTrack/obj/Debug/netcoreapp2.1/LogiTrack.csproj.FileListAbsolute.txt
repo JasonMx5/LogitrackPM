@@ -3,7 +3,6 @@ C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\bin\Debug\netcoreapp2.1\Lo
 C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\bin\Debug\netcoreapp2.1\LogiTrack.runtimeconfig.dev.json
 C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\bin\Debug\netcoreapp2.1\LogiTrack.dll
 C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\bin\Debug\netcoreapp2.1\LogiTrack.pdb
-C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\obj\Debug\netcoreapp2.1\LogiTrack.csprojAssemblyReference.cache
 C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\obj\Debug\netcoreapp2.1\LogiTrack.csproj.CoreCompileInputs.cache
 C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\obj\Debug\netcoreapp2.1\LogiTrack.RazorAssemblyInfo.cache
 C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\obj\Debug\netcoreapp2.1\LogiTrack.RazorAssemblyInfo.cs
@@ -12,3 +11,4 @@ C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\obj\Debug\netcoreapp2.1\Lo
 C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\obj\Debug\netcoreapp2.1\LogiTrack.RazorTargetAssemblyInfo.cache
 C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\obj\Debug\netcoreapp2.1\LogiTrack.dll
 C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\obj\Debug\netcoreapp2.1\LogiTrack.pdb
+C:\Users\jason\Documents\GitHub\LogitrackPM\LogiTrack\obj\Debug\netcoreapp2.1\LogiTrack.csprojAssemblyReference.cache
